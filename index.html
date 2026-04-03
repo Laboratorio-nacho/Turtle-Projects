@@ -1,3 +1,5 @@
+Index · HTML Copiar
+
 <!doctype html>
 <html lang="es">
   <head>
@@ -201,7 +203,7 @@
       .close-btn:hover {
         color: var(--text);
       }
-      .modal-canvas-wrap {
+      .canvas-wrap {
         background: #000;
         display: flex;
         align-items: center;
@@ -214,6 +216,7 @@
         gap: 0.75rem;
         border-top: 1px solid var(--border);
         align-items: center;
+        flex-wrap: wrap;
       }
       .stop-btn {
         color: #ff4466 !important;
@@ -223,11 +226,11 @@
         background: #ff4466 !important;
         color: #fff !important;
       }
-      .error-msg {
+      .err {
         font-family: var(--mono);
-        font-size: 0.7rem;
+        font-size: 0.65rem;
         color: #ff4466;
-        margin-left: 0.5rem;
+        flex: 1;
       }
       footer {
         padding: 2rem;
@@ -262,13 +265,20 @@
           <span class="modal-title" id="modal-title"></span>
           <button class="close-btn" id="modal-close">&times;</button>
         </div>
-        <div class="modal-canvas-wrap" id="canvas-wrap"></div>
+        <div class="canvas-wrap" id="canvas-wrap">
+          <canvas
+            id="tcanvas"
+            width="480"
+            height="380"
+            style="display: block"
+          ></canvas>
+        </div>
         <div class="modal-controls">
-          <button class="run-btn" id="modal-run-btn">&#9654; ejecutar</button>
-          <button class="run-btn stop-btn" id="modal-stop-btn">
+          <button class="run-btn" id="btn-run">&#9654; ejecutar</button>
+          <button class="run-btn stop-btn" id="btn-stop">
             &#9632; reiniciar
           </button>
-          <span class="error-msg" id="error-msg"></span>
+          <span class="err" id="err"></span>
         </div>
       </div>
     </div>
@@ -281,31 +291,31 @@
     <script src="https://cdn.jsdelivr.net/npm/skulpt@1.2.0/dist/skulpt.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/skulpt@1.2.0/dist/skulpt-stdlib.js"></script>
     <script>
-      const projects = [
+      var projects = [
         {
           file: "virus.py",
           tag: "generative",
-          desc: "Espiral caotica verde sobre fondo negro.",
+          desc: "Espiral caótica verde sobre fondo negro.",
         },
         {
           file: "genial.py",
           tag: "pattern",
-          desc: "Espiral cuadrada con colores ciclicos.",
+          desc: "Espiral cuadrada con colores cíclicos.",
         },
         {
           file: "optico.py",
           tag: "optical art",
-          desc: "Ilusion optica con colores HSV.",
+          desc: "Ilusión óptica con colores HSV.",
         },
         {
           file: "infinito.py",
           tag: "geometric",
-          desc: "Curva infinito con circulos en cian.",
+          desc: "Curva infinito con círculos en cian.",
         },
         {
           file: "corazon.py",
           tag: "shape",
-          desc: "Corazon rojo con arcos y lineas.",
+          desc: "Corazón rojo con arcos y líneas.",
         },
         {
           file: "cuadrito.py",
@@ -315,7 +325,7 @@
         {
           file: "love.py",
           tag: "art",
-          desc: "Corazon rojo con texto estilizado.",
+          desc: "Corazón rojo con texto estilizado.",
         },
         {
           file: "amongus.py",
@@ -324,21 +334,35 @@
         },
       ];
 
-      const codeCache = {};
+      var cache = {};
+      var current = null;
 
-      async function loadPy(file) {
-        if (codeCache[file]) return codeCache[file];
-        const res = await fetch(file);
-        if (!res.ok) throw new Error("No se pudo cargar " + file);
-        codeCache[file] = await res.text();
-        return codeCache[file];
+      function loadPy(file, cb, errcb) {
+        if (cache[file]) {
+          cb(cache[file]);
+          return;
+        }
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", file);
+        xhr.onload = function () {
+          if (xhr.status === 200) {
+            cache[file] = xhr.responseText;
+            cb(xhr.responseText);
+          } else {
+            errcb("HTTP " + xhr.status);
+          }
+        };
+        xhr.onerror = function () {
+          errcb("No se pudo cargar " + file);
+        };
+        xhr.send();
       }
 
-      function freshCanvas() {
-        const wrap = document.getElementById("canvas-wrap");
+      function resetCanvas() {
+        var wrap = document.getElementById("canvas-wrap");
         wrap.innerHTML = "";
-        const c = document.createElement("canvas");
-        c.id = "turtle-canvas";
+        var c = document.createElement("canvas");
+        c.id = "tcanvas";
         c.width = 480;
         c.height = 380;
         c.style.display = "block";
@@ -346,8 +370,10 @@
         return c;
       }
 
-      function runCode(code) {
-        const canvas = freshCanvas();
+      function execCode(code) {
+        document.getElementById("err").textContent = "";
+        var canvas = resetCanvas();
+
         Sk.configure({
           output: function () {},
           read: function (x) {
@@ -355,25 +381,52 @@
               Sk.builtinFiles === undefined ||
               Sk.builtinFiles.files[x] === undefined
             )
-              throw "File not found: " + x;
+              throw "File not found: '" + x + "'";
             return Sk.builtinFiles.files[x];
           },
           __future__: Sk.python3,
+          killableWhile: true,
+          killableFor: true,
         });
-        Sk.TurtleGraphics = { target: canvas, width: 480, height: 380 };
-        return Sk.misceval.asyncToPromise(function () {
-          return Sk.importMainWithBody("<stdin>", false, code, true);
-        });
+
+        Sk.TurtleGraphics = {
+          target: canvas,
+          width: 480,
+          height: 380,
+          animate: true,
+        };
+
+        Sk.misceval
+          .asyncToPromise(function () {
+            return Sk.importMainWithBody("<stdin>", false, code, true);
+          })
+          .then(function () {
+            document.getElementById("err").textContent = "";
+          })
+          .catch(function (e) {
+            var msg = e.toString();
+            // ignorar exitonclick / exitonclick no es un error real
+            if (
+              msg.indexOf("exitonclick") === -1 &&
+              msg.indexOf("done") === -1
+            ) {
+              document.getElementById("err").textContent = msg.substring(
+                0,
+                120,
+              );
+            }
+          });
       }
 
-      const grid = document.getElementById("grid");
+      // build grid
+      var grid = document.getElementById("grid");
       projects.forEach(function (p) {
-        const card = document.createElement("div");
+        var card = document.createElement("div");
         card.className = "card";
         card.innerHTML =
-          '<div class="card-preview">' +
-          '<div class="play-hint"><div class="play-btn"><svg width="16" height="16" viewBox="0 0 16 16"><polygon points="4,2 14,8 4,14"/></svg></div></div>' +
-          "</div>" +
+          '<div class="card-preview"><div class="play-hint"><div class="play-btn">' +
+          '<svg width="16" height="16" viewBox="0 0 16 16"><polygon points="4,2 14,8 4,14"/></svg>' +
+          "</div></div></div>" +
           '<div class="card-info">' +
           '<div class="tag">' +
           p.tag +
@@ -397,18 +450,14 @@
         });
       });
 
-      const modal = document.getElementById("modal");
-      const modalTitle = document.getElementById("modal-title");
-      const modalRunBtn = document.getElementById("modal-run-btn");
-      const errorMsg = document.getElementById("error-msg");
-      let currentProject = null;
+      var modal = document.getElementById("modal");
 
       function openModal(p) {
-        currentProject = p;
-        modalTitle.textContent = p.file;
-        errorMsg.textContent = "";
+        current = p;
+        document.getElementById("modal-title").textContent = p.file;
+        document.getElementById("err").textContent = "";
         modal.classList.add("open");
-        freshCanvas();
+        resetCanvas();
       }
 
       document
@@ -420,26 +469,28 @@
         if (e.target === modal) modal.classList.remove("open");
       });
 
-      modalRunBtn.addEventListener("click", async function () {
-        if (!currentProject) return;
-        errorMsg.textContent = "";
-        modalRunBtn.textContent = "cargando...";
-        modalRunBtn.disabled = true;
-        try {
-          const code = await loadPy(currentProject.file);
-          runCode(code).catch(function (err) {
-            errorMsg.textContent =
-              "error: " + (err.toString ? err.toString() : err);
-          });
-        } catch (err) {
-          errorMsg.textContent = "no se pudo cargar el archivo";
-        }
-        modalRunBtn.textContent = "&#9654; ejecutar";
-        modalRunBtn.disabled = false;
+      document.getElementById("btn-run").addEventListener("click", function () {
+        if (!current) return;
+        var btn = document.getElementById("btn-run");
+        btn.textContent = "cargando...";
+        btn.disabled = true;
+        loadPy(
+          current.file,
+          function (code) {
+            btn.innerHTML = "&#9654; ejecutar";
+            btn.disabled = false;
+            execCode(code);
+          },
+          function (err) {
+            btn.innerHTML = "&#9654; ejecutar";
+            btn.disabled = false;
+            document.getElementById("err").textContent = "Error: " + err;
+          },
+        );
       });
 
       document
-        .getElementById("modal-stop-btn")
+        .getElementById("btn-stop")
         .addEventListener("click", function () {
           location.reload();
         });
