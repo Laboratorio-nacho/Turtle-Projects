@@ -1,499 +1,645 @@
-Index · HTML Copiar
-
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Nacho — Python Animations</title>
-    <link
-      href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap"
-      rel="stylesheet"
-    />
-    <style>
-      *,
-      *::before,
-      *::after {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-      }
-      :root {
-        --bg: #0a0a0f;
-        --surface: #111118;
-        --border: rgba(255, 255, 255, 0.08);
-        --accent: #00ff88;
-        --text: #e8e8f0;
-        --muted: #666680;
-        --mono: "Space Mono", monospace;
-        --sans: "DM Sans", sans-serif;
-      }
-      body {
-        background: var(--bg);
-        color: var(--text);
-        font-family: var(--sans);
-        min-height: 100vh;
-      }
-      header {
-        padding: 3rem 2rem 2rem;
-        border-bottom: 1px solid var(--border);
-        display: flex;
-        align-items: flex-end;
-        justify-content: space-between;
-        flex-wrap: wrap;
-        gap: 1rem;
-      }
-      .logo {
-        font-family: var(--mono);
-        font-size: 0.75rem;
-        color: var(--accent);
-        letter-spacing: 0.2em;
-        text-transform: uppercase;
-        margin-bottom: 0.5rem;
-      }
-      h1 {
-        font-family: var(--mono);
-        font-size: clamp(2rem, 5vw, 3.5rem);
-        font-weight: 700;
-        line-height: 1;
-      }
-      h1 span {
-        color: var(--accent);
-      }
-      .subtitle {
-        font-size: 0.9rem;
-        color: var(--muted);
-        font-family: var(--mono);
-        align-self: flex-end;
-      }
-      .grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-        gap: 1px;
-        background: var(--border);
-        border-top: 1px solid var(--border);
-      }
-      .card {
-        background: var(--surface);
-        cursor: pointer;
-        transition: background 0.2s;
-      }
-      .card:hover {
-        background: #16161f;
-      }
-      .card-preview {
-        width: 100%;
-        aspect-ratio: 4/3;
-        background: #0d0d14;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-bottom: 1px solid var(--border);
-        position: relative;
-        overflow: hidden;
-      }
-      .play-hint {
-        position: absolute;
-        inset: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: rgba(0, 0, 0, 0.4);
-        transition: opacity 0.2s;
-      }
-      .card:hover .play-hint {
-        opacity: 0;
-      }
-      .play-btn {
-        width: 48px;
-        height: 48px;
-        border-radius: 50%;
-        border: 2px solid var(--accent);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-      .play-btn svg {
-        fill: var(--accent);
-      }
-      .card-info {
-        padding: 1rem 1.25rem;
-      }
-      .tag {
-        font-family: var(--mono);
-        font-size: 0.65rem;
-        letter-spacing: 0.15em;
-        text-transform: uppercase;
-        color: var(--accent);
-        margin-bottom: 0.4rem;
-      }
-      .card-title {
-        font-family: var(--mono);
-        font-size: 1rem;
-        font-weight: 700;
-        margin-bottom: 0.35rem;
-      }
-      .card-desc {
-        font-size: 0.8rem;
-        color: var(--muted);
-        line-height: 1.5;
-      }
-      .run-btn {
-        margin-top: 0.75rem;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        font-family: var(--mono);
-        font-size: 0.7rem;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        color: var(--accent);
-        border: 1px solid var(--accent);
-        padding: 6px 14px;
-        border-radius: 2px;
-        background: transparent;
-        cursor: pointer;
-        transition:
-          background 0.15s,
-          color 0.15s;
-      }
-      .run-btn:hover {
-        background: var(--accent);
-        color: #000;
-      }
-      .modal-bg {
-        display: none;
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.85);
-        z-index: 100;
-        align-items: center;
-        justify-content: center;
-      }
-      .modal-bg.open {
-        display: flex;
-      }
-      .modal {
-        background: var(--surface);
-        border: 1px solid var(--border);
-        width: 90vw;
-        max-width: 700px;
-        max-height: 90vh;
-        overflow-y: auto;
-      }
-      .modal-header {
-        padding: 1.25rem 1.5rem;
-        border-bottom: 1px solid var(--border);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-      }
-      .modal-title {
-        font-family: var(--mono);
-        font-size: 1rem;
-      }
-      .close-btn {
-        background: none;
-        border: none;
-        color: var(--muted);
-        font-size: 1.5rem;
-        cursor: pointer;
-        line-height: 1;
-      }
-      .close-btn:hover {
-        color: var(--text);
-      }
-      .canvas-wrap {
-        background: #000;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        min-height: 400px;
-      }
-      .modal-controls {
-        padding: 1rem 1.5rem;
-        display: flex;
-        gap: 0.75rem;
-        border-top: 1px solid var(--border);
-        align-items: center;
-        flex-wrap: wrap;
-      }
-      .stop-btn {
-        color: #ff4466 !important;
-        border-color: #ff4466 !important;
-      }
-      .stop-btn:hover {
-        background: #ff4466 !important;
-        color: #fff !important;
-      }
-      .err {
-        font-family: var(--mono);
-        font-size: 0.65rem;
-        color: #ff4466;
-        flex: 1;
-      }
-      footer {
-        padding: 2rem;
-        border-top: 1px solid var(--border);
-        font-family: var(--mono);
-        font-size: 0.7rem;
-        color: var(--muted);
-        display: flex;
-        gap: 2rem;
-        flex-wrap: wrap;
-      }
-      footer a {
-        color: var(--accent);
-        text-decoration: none;
-      }
-    </style>
-  </head>
-  <body>
-    <header>
-      <div>
-        <div class="logo">nachoportafolio.me</div>
-        <h1>python<span>.</span>animations</h1>
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nacho — Python Animations</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap"
+    rel="stylesheet">
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0
+    }
+
+    :root {
+      --bg: #0a0a0f;
+      --surface: #111118;
+      --border: rgba(255, 255, 255, 0.08);
+      --accent: #00ff88;
+      --text: #e8e8f0;
+      --muted: #666680;
+      --mono: 'Space Mono', monospace;
+      --sans: 'DM Sans', sans-serif
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      min-height: 100vh
+    }
+
+    header {
+      padding: 3rem 2rem 2rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem
+    }
+
+    .logo {
+      font-family: var(--mono);
+      font-size: .75rem;
+      color: var(--accent);
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      margin-bottom: .5rem
+    }
+
+    h1 {
+      font-family: var(--mono);
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      font-weight: 700;
+      line-height: 1
+    }
+
+    h1 span {
+      color: var(--accent)
+    }
+
+    .subtitle {
+      font-size: .9rem;
+      color: var(--muted);
+      font-family: var(--mono);
+      align-self: flex-end
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1px;
+      background: var(--border);
+      border-top: 1px solid var(--border)
+    }
+
+    .card {
+      background: var(--surface);
+      cursor: pointer;
+      transition: background .2s
+    }
+
+    .card:hover {
+      background: #16161f
+    }
+
+    .card-preview {
+      width: 100%;
+      aspect-ratio: 4/3;
+      background: #0d0d14;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+      overflow: hidden
+    }
+
+    .preview-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%
+    }
+
+    .play-hint {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.5);
+      transition: opacity .3s
+    }
+
+    .card:hover .play-hint {
+      opacity: 0
+    }
+
+    .play-btn {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      border: 2px solid var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center
+    }
+
+    .play-btn svg {
+      fill: var(--accent)
+    }
+
+    .card-info {
+      padding: 1rem 1.25rem
+    }
+
+    .tag {
+      font-family: var(--mono);
+      font-size: .65rem;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: .4rem
+    }
+
+    .card-title {
+      font-family: var(--mono);
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: .35rem
+    }
+
+    .card-desc {
+      font-size: .8rem;
+      color: var(--muted);
+      line-height: 1.5
+    }
+
+    .pill {
+      display: inline-block;
+      margin-top: .5rem;
+      font-family: var(--mono);
+      font-size: .6rem;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: #0a0a0f;
+      background: var(--accent);
+      padding: 3px 8px;
+      border-radius: 2px
+    }
+
+    .run-btn {
+      margin-top: .75rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--mono);
+      font-size: .7rem;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      padding: 6px 14px;
+      border-radius: 2px;
+      background: transparent;
+      cursor: pointer;
+      transition: background .15s, color .15s
+    }
+
+    .run-btn:hover {
+      background: var(--accent);
+      color: #000
+    }
+
+    .modal-bg {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.88);
+      z-index: 100;
+      align-items: center;
+      justify-content: center
+    }
+
+    .modal-bg.open {
+      display: flex
+    }
+
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      width: 90vw;
+      max-width: 700px
+    }
+
+    .modal-header {
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center
+    }
+
+    .modal-title {
+      font-family: var(--mono);
+      font-size: 1rem
+    }
+
+    .modal-tag {
+      font-family: var(--mono);
+      font-size: .65rem;
+      color: var(--accent);
+      letter-spacing: .15em;
+      text-transform: uppercase
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 1.5rem;
+      cursor: pointer;
+      line-height: 1
+    }
+
+    .close-btn:hover {
+      color: var(--text)
+    }
+
+    .canvas-wrap {
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 420px;
+      position: relative
+    }
+
+    #modal-canvas {
+      display: block
+    }
+
+    .modal-controls {
+      padding: 1rem 1.5rem;
+      display: flex;
+      gap: .75rem;
+      border-top: 1px solid var(--border);
+      align-items: center
+    }
+
+    .stop-btn {
+      color: #ff4466 !important;
+      border-color: #ff4466 !important
+    }
+
+    .stop-btn:hover {
+      background: #ff4466 !important;
+      color: #fff !important
+    }
+
+    .modal-desc {
+      padding: .75rem 1.5rem;
+      font-size: .8rem;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border)
+    }
+
+    footer {
+      padding: 2rem;
+      border-top: 1px solid var(--border);
+      font-family: var(--mono);
+      font-size: .7rem;
+      color: var(--muted);
+      display: flex;
+      gap: 2rem;
+      flex-wrap: wrap
+    }
+
+    footer a {
+      color: var(--accent);
+      text-decoration: none
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <div>
+      <div class="logo">nachoportafolio.me</div>
+      <h1>python<span>.</span>animations</h1>
+    </div>
+    <div class="subtitle">// turtle projects</div>
+  </header>
+
+  <div class="grid" id="grid"></div>
+
+  <div class="modal-bg" id="modal">
+    <div class="modal">
+      <div class="modal-header">
+        <div>
+          <div class="modal-tag" id="modal-tag"></div>
+          <div class="modal-title" id="modal-title"></div>
+        </div>
+        <button class="close-btn" id="modal-close">&times;</button>
       </div>
-      <div class="subtitle">// turtle projects</div>
-    </header>
-
-    <div class="grid" id="grid"></div>
-
-    <div class="modal-bg" id="modal">
-      <div class="modal">
-        <div class="modal-header">
-          <span class="modal-title" id="modal-title"></span>
-          <button class="close-btn" id="modal-close">&times;</button>
-        </div>
-        <div class="canvas-wrap" id="canvas-wrap">
-          <canvas
-            id="tcanvas"
-            width="480"
-            height="380"
-            style="display: block"
-          ></canvas>
-        </div>
-        <div class="modal-controls">
-          <button class="run-btn" id="btn-run">&#9654; ejecutar</button>
-          <button class="run-btn stop-btn" id="btn-stop">
-            &#9632; reiniciar
-          </button>
-          <span class="err" id="err"></span>
-        </div>
+      <div class="modal-desc" id="modal-desc"></div>
+      <div class="canvas-wrap">
+        <canvas id="modal-canvas" width="480" height="400"></canvas>
+      </div>
+      <div class="modal-controls">
+        <button class="run-btn" id="btn-run">&#9654; ejecutar</button>
+        <button class="run-btn stop-btn" id="btn-stop">&#9632; detener</button>
       </div>
     </div>
+  </div>
 
-    <footer>
-      <span>built with skulpt + turtle</span>
-      <a href="https://nachoportafolio.me">&#8592; volver al portafolio</a>
-    </footer>
+  <footer>
+    <span>originally built with python turtle</span>
+    <a href="https://nachoportafolio.me">&#8592; volver al portafolio</a>
+  </footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/skulpt@1.2.0/dist/skulpt.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/skulpt@1.2.0/dist/skulpt-stdlib.js"></script>
-    <script>
-      var projects = [
-        {
-          file: "virus.py",
-          tag: "generative",
-          desc: "Espiral caótica verde sobre fondo negro.",
-        },
-        {
-          file: "genial.py",
-          tag: "pattern",
-          desc: "Espiral cuadrada con colores cíclicos.",
-        },
-        {
-          file: "optico.py",
-          tag: "optical art",
-          desc: "Ilusión óptica con colores HSV.",
-        },
-        {
-          file: "infinito.py",
-          tag: "geometric",
-          desc: "Curva infinito con círculos en cian.",
-        },
-        {
-          file: "corazon.py",
-          tag: "shape",
-          desc: "Corazón rojo con arcos y líneas.",
-        },
-        {
-          file: "cuadrito.py",
-          tag: "loop",
-          desc: "Espiral cuadrada que crece.",
-        },
-        {
-          file: "love.py",
-          tag: "art",
-          desc: "Corazón rojo con texto estilizado.",
-        },
-        {
-          file: "amongus.py",
-          tag: "character",
-          desc: "Personaje Among Us con visor azul.",
-        },
-      ];
+  <script>
+    // ─── Turtle engine ──────────────────────────────────────────────────────────
+    function TurtleEngine(canvas) {
+      var ctx = canvas.getContext('2d');
+      var W = canvas.width, H = canvas.height;
+      var x = W / 2, y = H / 2, angle = -90;
+      var penDown = true, filling = false;
+      var strokeColor = '#ffffff', fillColor = '#ffffff';
+      var lineWidth = 1;
+      var fillPath = [];
+      var bgColor = '#000000';
+      var steps = [];
+      var stepIndex = 0;
+      var rafId = null;
+      var BATCH = 60;
 
-      var cache = {};
-      var current = null;
+      ctx.fillStyle = bgColor;
+      ctx.fillRect(0, 0, W, H);
 
-      function loadPy(file, cb, errcb) {
-        if (cache[file]) {
-          cb(cache[file]);
-          return;
-        }
-        var xhr = new XMLHttpRequest();
-        xhr.open("GET", file);
-        xhr.onload = function () {
-          if (xhr.status === 200) {
-            cache[file] = xhr.responseText;
-            cb(xhr.responseText);
-          } else {
-            errcb("HTTP " + xhr.status);
+      function deg2rad(d) { return d * Math.PI / 180; }
+
+      function hsvToRgb(h, s, v) {
+        var r, g, b, i = Math.floor(h * 6), f = h * 6 - i, p = v * (1 - s), q = v * (1 - f * s), t = v * (1 - (1 - f) * s);
+        switch (i % 6) { case 0: r = v; g = t; b = p; break; case 1: r = q; g = v; b = p; break; case 2: r = p; g = v; b = t; break; case 3: r = p; g = q; b = v; break; case 4: r = t; g = p; b = v; break; case 5: r = v; g = p; b = q; break; }
+        return 'rgb(' + Math.round(r * 255) + ',' + Math.round(g * 255) + ',' + Math.round(b * 255) + ')';
+      }
+
+      this.hsvToRgb = hsvToRgb;
+
+      function addStep(fn) { steps.push(fn); }
+      this.addStep = addStep;
+
+      this.forward = function (d) {
+        addStep(function () {
+          var nx = x + d * Math.cos(deg2rad(angle));
+          var ny = y + d * Math.sin(deg2rad(angle));
+          if (penDown) {
+            ctx.strokeStyle = strokeColor;
+            ctx.lineWidth = lineWidth;
+            ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(nx, ny); ctx.stroke();
           }
-        };
-        xhr.onerror = function () {
-          errcb("No se pudo cargar " + file);
-        };
-        xhr.send();
-      }
-
-      function resetCanvas() {
-        var wrap = document.getElementById("canvas-wrap");
-        wrap.innerHTML = "";
-        var c = document.createElement("canvas");
-        c.id = "tcanvas";
-        c.width = 480;
-        c.height = 380;
-        c.style.display = "block";
-        wrap.appendChild(c);
-        return c;
-      }
-
-      function execCode(code) {
-        document.getElementById("err").textContent = "";
-        var canvas = resetCanvas();
-
-        Sk.configure({
-          output: function () {},
-          read: function (x) {
-            if (
-              Sk.builtinFiles === undefined ||
-              Sk.builtinFiles.files[x] === undefined
-            )
-              throw "File not found: '" + x + "'";
-            return Sk.builtinFiles.files[x];
-          },
-          __future__: Sk.python3,
-          killableWhile: true,
-          killableFor: true,
+          if (filling) fillPath.push([nx, ny]);
+          x = nx; y = ny;
         });
-
-        Sk.TurtleGraphics = {
-          target: canvas,
-          width: 480,
-          height: 380,
-          animate: true,
-        };
-
-        Sk.misceval
-          .asyncToPromise(function () {
-            return Sk.importMainWithBody("<stdin>", false, code, true);
-          })
-          .then(function () {
-            document.getElementById("err").textContent = "";
-          })
-          .catch(function (e) {
-            var msg = e.toString();
-            // ignorar exitonclick / exitonclick no es un error real
-            if (
-              msg.indexOf("exitonclick") === -1 &&
-              msg.indexOf("done") === -1
-            ) {
-              document.getElementById("err").textContent = msg.substring(
-                0,
-                120,
-              );
-            }
-          });
-      }
-
-      // build grid
-      var grid = document.getElementById("grid");
-      projects.forEach(function (p) {
-        var card = document.createElement("div");
-        card.className = "card";
-        card.innerHTML =
-          '<div class="card-preview"><div class="play-hint"><div class="play-btn">' +
-          '<svg width="16" height="16" viewBox="0 0 16 16"><polygon points="4,2 14,8 4,14"/></svg>' +
-          "</div></div></div>" +
-          '<div class="card-info">' +
-          '<div class="tag">' +
-          p.tag +
-          "</div>" +
-          '<div class="card-title">' +
-          p.file +
-          "</div>" +
-          '<div class="card-desc">' +
-          p.desc +
-          "</div>" +
-          '<button class="run-btn">&#9654; ejecutar</button>' +
-          "</div>";
-        grid.appendChild(card);
-        function open() {
-          openModal(p);
+      };
+      this.backward = function (d) { this.forward(-d); };
+      this.right = function (a) { addStep(function () { angle += a; }); };
+      this.left = function (a) { addStep(function () { angle -= a; }); };
+      this.penup = function () { addStep(function () { penDown = false; }); };
+      this.pendown = function () { addStep(function () { penDown = true; }); };
+      this.goto = function (gx, gy) {
+        addStep(function () {
+          x = gx + W / 2; y = -gy + H / 2;
+        });
+      };
+      this.setcolor = function (c) { addStep(function () { strokeColor = c; fillColor = c; }); };
+      this.setpencolor = function (c) { addStep(function () { strokeColor = c; }); };
+      this.setfillcolor = function (c) { addStep(function () { fillColor = c; }); };
+      this.setbg = function (c) {
+        addStep(function () {
+          bgColor = c; ctx.fillStyle = c; ctx.fillRect(0, 0, W, H);
+        });
+      };
+      this.setwidth = function (w) { addStep(function () { lineWidth = w; }); };
+      this.setheading = function (a) { addStep(function () { angle = a - 90; }); };
+      this.beginFill = function () {
+        addStep(function () { filling = true; fillPath = [[x, y]]; });
+      };
+      this.endFill = function () {
+        addStep(function () {
+          ctx.beginPath();
+          ctx.moveTo(fillPath[0][0], fillPath[0][1]);
+          for (var i = 1; i < fillPath.length; i++) ctx.lineTo(fillPath[i][0], fillPath[i][1]);
+          ctx.closePath();
+          ctx.fillStyle = fillColor; ctx.fill();
+          ctx.strokeStyle = strokeColor; ctx.stroke();
+          filling = false;
+        });
+      };
+      this.circle = function (r, extent) {
+        if (extent === undefined) extent = 360;
+        var segments = Math.abs(Math.round(extent / 5));
+        var step = extent / segments;
+        var t = this;
+        for (var i = 0; i < segments; i++) {
+          (function () {
+            var sr = r * 2 * Math.PI * Math.abs(step / 360);
+            t.forward(sr);
+            t.left(step);
+          })();
         }
-        card.addEventListener("click", open);
-        card.querySelector(".run-btn").addEventListener("click", function (e) {
-          e.stopPropagation();
-          open();
+      };
+      this.write = function (text, opts) {
+        var ox = x, oy = y, sc = strokeColor;
+        var fontSize = (opts && opts.fontSize) || 18;
+        var align = (opts && opts.align) || 'left';
+        addStep(function () {
+          ctx.fillStyle = sc;
+          ctx.font = 'bold ' + fontSize + 'px monospace';
+          ctx.textAlign = align;
+          ctx.fillText(text, ox, oy);
         });
-      });
+      };
 
-      var modal = document.getElementById("modal");
+      this.run = function (speed) {
+        stepIndex = 0;
+        BATCH = speed || 60;
+        function tick() {
+          for (var i = 0; i < BATCH; i++) {
+            if (stepIndex >= steps.length) return;
+            steps[stepIndex++]();
+          }
+          if (stepIndex < steps.length) rafId = requestAnimationFrame(tick);
+        }
+        rafId = requestAnimationFrame(tick);
+      };
 
-      function openModal(p) {
-        current = p;
-        document.getElementById("modal-title").textContent = p.file;
-        document.getElementById("err").textContent = "";
-        modal.classList.add("open");
-        resetCanvas();
+      this.stop = function () {
+        if (rafId) cancelAnimationFrame(rafId);
+        rafId = null;
+      };
+
+      this.reset = function () {
+        this.stop();
+        steps = []; stepIndex = 0;
+        x = W / 2; y = H / 2; angle = -90;
+        penDown = true; filling = false;
+        strokeColor = '#ffffff'; fillColor = '#ffffff'; lineWidth = 1;
+        ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
+      };
+    }
+
+    // ─── Animations ─────────────────────────────────────────────────────────────
+    var animations = {
+
+      'virus.py': function (t) {
+        t.setbg('black'); t.setcolor('green');
+        var b = 180;
+        while (b > 5) { t.right(b); t.forward(b * 0.85); b -= 1; }
+      },
+
+      'genial.py': function (t) {
+        t.setbg('black');
+        var colors = ['red', 'yellow', 'blue', 'green'];
+        for (var i = 0; i < 200; i++) {
+          t.setpencolor(colors[i % 4]);
+          t.forward(i * 0.8); t.left(95);
+        }
+      },
+
+      'optico.py': function (t) {
+        t.setbg('black');
+        var n = 36, h = 0;
+        for (var i = 0; i < 400; i++) {
+          t.setpencolor(t.hsvToRgb(h % 1, 1, 0.9));
+          h += 1 / n;
+          t.left(145);
+          for (var j = 0; j < 5; j++) { t.forward(110); t.left(150); }
+        }
+      },
+
+      'infinito.py': function (t) {
+        t.setbg('black'); t.setcolor('cyan');
+        t.setheading(135);
+        for (var i = 0; i < 150; i++) {
+          t.circle(28, 360);
+          if (i > 7 && i < 62) t.left(5);
+          if (i > 80 && i < 133) t.right(5);
+          if (i < 80) t.forward(8); else t.forward(4);
+        }
+      },
+
+      'corazon.py': function (t) {
+        t.setbg('black'); t.setcolor('red'); t.setfillcolor('red');
+        t.penup();
+        t.goto(0, -80); // ← baja el corazón (más negativo = más abajo)
+        t.pendown();
+        t.beginFill();
+        t.left(-40); t.forward(100);
+        t.circle(50, 200); t.right(140); t.circle(50, 200);
+        t.forward(133);
+        t.endFill();
+      },
+
+      'cuadrito.py': function (t) {
+        t.setbg('black'); t.setcolor('cyan');
+        for (var i = 0; i < 36; i++) {
+          t.forward(30 + i * 7); t.right(90);
+        }
+      },
+
+      'love.py': function (t) {
+        t.setbg('black'); t.setcolor('white'); t.setfillcolor('red');
+        t.penup();
+        t.goto(0, -80); // ← baja el corazón (más negativo = más abajo)
+        t.pendown();
+        t.beginFill();
+        t.left(52); t.forward(100);
+        for (var i = 0; i < 200; i++) { t.right(1); t.forward(1); }
+        t.left(120);
+        for (var i = 0; i < 200; i++) { t.right(1); t.forward(1); }
+        t.forward(112);
+        t.endFill();
+        t.write('love', { fontSize: 38, align: 'center' });
+      },
+
+      
+    };
+
+    // ─── Projects metadata ──────────────────────────────────────────────────────
+    var projects = [
+      { file: 'virus.py', tag: 'generative', desc: 'Espiral caótica verde sobre fondo negro, inspirada en patrones de crecimiento viral.' },
+      { file: 'genial.py', tag: 'pattern', desc: 'Espiral cuadrada con colores cíclicos rojo, amarillo, azul y verde.' },
+      { file: 'optico.py', tag: 'optical art', desc: 'Ilusión óptica con paleta HSV rotando en un patrón geométrico.' },
+      { file: 'infinito.py', tag: 'geometric', desc: 'Símbolo infinito trazado con círculos superpuestos en cian.' },
+      { file: 'corazon.py', tag: 'shape', desc: 'Corazón rojo dibujado con arcos y líneas rectas.' },
+      { file: 'cuadrito.py', tag: 'loop', desc: 'Espiral cuadrada que crece iteración a iteración.' },
+      { file: 'love.py', tag: 'art', desc: 'Corazón rojo sobre negro con texto estilizado superpuesto.' },
+      { file: 'amongus.py', tag: 'character', desc: 'Personaje Among Us dibujado con turtle, rojo con visor azul.' }
+    ];
+
+    // ─── Build grid ─────────────────────────────────────────────────────────────
+    var grid = document.getElementById('grid');
+    projects.forEach(function (p) {
+      var card = document.createElement('div');
+      card.className = 'card';
+      var preview = '<div class="card-preview">' +
+        '<div class="play-hint"><div class="play-btn"><svg width="16" height="16" viewBox="0 0 16 16"><polygon points="4,2 14,8 4,14"/></svg></div></div>' +
+        '</div>';
+      
+      var runBtnHTML = '<br><button class="run-btn" style="margin-top:.75rem">&#9654; ejecutar</button>';
+      
+      if (p.file === 'amongus.py') {
+        preview = '<div class="card-preview" style="display: flex; align-items: center; justify-content: center;">' +
+          '<img src="amongus.png" style="width:300px;">' +
+          '</div>';
+        runBtnHTML = '<br><button class="run-btn" style="margin-top:.75rem" disabled>&#9654; ejecutar</button>';
       }
+      
+      card.innerHTML =
+        preview +
+        '<div class="card-info">' +
+        '<div class="tag">' + p.tag + '</div>' +
+        '<div class="card-title">' + p.file + '</div>' +
+        '<div class="card-desc">' + p.desc + '</div>' +
+        '<span class="pill">python turtle</span>' +
+        runBtnHTML +
+        '</div>';
+      grid.appendChild(card);
+      function open() { openModal(p); }
+      card.addEventListener('click', open);
+      var runBtn = card.querySelector('.run-btn');
+      if (!runBtn.disabled) {
+        runBtn.addEventListener('click', function (e) { e.stopPropagation(); open(); });
+      }
+    });
 
-      document
-        .getElementById("modal-close")
-        .addEventListener("click", function () {
-          modal.classList.remove("open");
-        });
-      modal.addEventListener("click", function (e) {
-        if (e.target === modal) modal.classList.remove("open");
-      });
+    // ─── Modal ──────────────────────────────────────────────────────────────────
+    var modal = document.getElementById('modal');
+    var engine = null;
+    var current = null;
 
-      document.getElementById("btn-run").addEventListener("click", function () {
-        if (!current) return;
-        var btn = document.getElementById("btn-run");
-        btn.textContent = "cargando...";
-        btn.disabled = true;
-        loadPy(
-          current.file,
-          function (code) {
-            btn.innerHTML = "&#9654; ejecutar";
-            btn.disabled = false;
-            execCode(code);
-          },
-          function (err) {
-            btn.innerHTML = "&#9654; ejecutar";
-            btn.disabled = false;
-            document.getElementById("err").textContent = "Error: " + err;
-          },
-        );
-      });
+    function openModal(p) {
+      current = p;
+      document.getElementById('modal-title').textContent = p.file;
+      document.getElementById('modal-tag').textContent = p.tag;
+      document.getElementById('modal-desc').textContent = p.desc;
+      modal.classList.add('open');
+      if (engine) engine.reset();
+      var canvas = document.getElementById('modal-canvas');
+      engine = new TurtleEngine(canvas);
+    }
 
-      document
-        .getElementById("btn-stop")
-        .addEventListener("click", function () {
-          location.reload();
-        });
-    </script>
-  </body>
+    document.getElementById('modal-close').addEventListener('click', function () {
+      if (engine) engine.stop();
+      modal.classList.remove('open');
+    });
+    modal.addEventListener('click', function (e) {
+      if (e.target === modal) { if (engine) engine.stop(); modal.classList.remove('open'); }
+    });
+
+    document.getElementById('btn-run').addEventListener('click', function () {
+      if (!current || !engine) return;
+      engine.reset();
+      engine = new TurtleEngine(document.getElementById('modal-canvas'));
+      animations[current.file](engine);
+      engine.run(80);
+    });
+
+    document.getElementById('btn-stop').addEventListener('click', function () {
+      if (engine) engine.stop();
+    });
+  </script>
+</body>
+
 </html>
